@@ -21,6 +21,8 @@ def success_response(data, code=200):
 def failure_response(message, code=404):
     return json.dumps({"success": False, "error": message}), code
 
+#### Journal Routes ####
+
 # 1: Get all journals
 @app.route("/")
 @app.route("/journals/")
@@ -52,9 +54,32 @@ def create_journal():
     return success_response(new_journal.serialize(), 201)
 
 # 4: Delete a journal
-
+@app.route("/journals/<int:journal_id>/", methods=["DELETE"])
+def delete_journal_by_id(journal_id):
+    journal = Journal.query.filter_by(id = journal_id).first()
+    if journal is None:
+        return failure_response("Journal not found")
+    db.session.delete(journal)
+    db.session.commit()
+    return success_response(journal.serialize())
 
 # 4: Update a journal
+@app.route("/journals/<int:journal_id>/", methods=["POST"])
+def update_journal_by_id(journal_id):
+    body = json.loads(request.data)
+    title = body.get("title")
+    description = body.get("description")
+
+    journal = Journal.query.filter_by(id = journal_id).first()
+    if title is not None:
+        journal.title = title
+    if description is not None:
+        journal.description = description
+    db.session.commit()
+    return success_response(journal.serialize())
+
+#### Task Routes ####
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

@@ -2,7 +2,7 @@ import json
 import os
 from flask import request, Flask
 from datetime import datetime
-from db import Journal, db
+from db import Journal, Task, db
 
 app = Flask(__name__)
 db_filename = "journal.db"
@@ -63,7 +63,7 @@ def delete_journal_by_id(journal_id):
     db.session.commit()
     return success_response(journal.serialize())
 
-# 4: Update a journal
+# 5: Update a journal
 @app.route("/journals/<int:journal_id>/", methods=["POST"])
 def update_journal_by_id(journal_id):
     body = json.loads(request.data)
@@ -79,6 +79,57 @@ def update_journal_by_id(journal_id):
     return success_response(journal.serialize())
 
 #### Task Routes ####
+
+# 1: Create task for a specific journal
+@app.route("/journals/<int:journal_id>/tasks/", methods=["POST"])
+def create_task(journal_id):
+    journal = Journal.query.filter_by(id = journal_id).first()
+    if journal is None:
+        return failure_response("Journal not found")
+    
+    body = json.loads(request.data)
+    new_task = Task(
+        description = body.get("description", ""),
+        done = body.get("done", False),
+        journal_id = journal_id
+    )
+    db.session.add(new_task)
+    db.session.commit()
+    return success_response(new_task.serialize())
+
+# 2: Update task by id
+@app.route("/tasks/<int:task_id>/", methods=["POST"])
+def update_task_by_id(task_id):
+    body = json.loads(request.data)
+    description = body.get("description")
+    done = body.get("done")
+
+    task = Task.query.filter_by(id = task_id).first()
+    if description is not None:
+        task.description = description
+    if done is not None:
+        task.done = done
+    db.session.commit()
+    return success_response(task.serialize())
+
+# 3: Delete task by id
+@app.route("/tasks/<int:task_id>/", methods=["DELETE"])
+def delete_task_by_id(task_id):
+    task = Task.query.filter_by(id = task_id).first()
+    if task is None:
+        return failure_response("Task not found")
+    db.session.delete(task)
+    db.session.commit()
+    return success_response(task.serialize())
+
+# 4: Get all tasks of a specific journal
+@app.route("/journals/<int:journal_id>/tasks/")
+def get_tasks_of_journal(journal_id):
+    journal = Journal.query.filter_by(id = journal_id).first()
+    if journal is None:
+        return failure_response("Journal not found")
+    
+    return success_response(journal.serialize()["tasks"])
 
 
 if __name__ == "__main__":

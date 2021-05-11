@@ -88,8 +88,12 @@ def create_task(journal_id):
         return failure_response("Journal not found")
     
     body = json.loads(request.data)
+    description = body.get("description")
+    if description is None:
+        return failure_response("No description provided")
+
     new_task = Task(
-        description = body.get("description", ""),
+        description = description,
         done = body.get("done", False),
         journal_id = journal_id
     )
@@ -105,6 +109,8 @@ def update_task_by_id(task_id):
     done = body.get("done")
 
     task = Task.query.filter_by(id = task_id).first()
+    if task is None:
+        return failure_response("Task not found")
     if description is not None:
         task.description = description
     if done is not None:

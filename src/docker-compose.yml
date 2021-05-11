@@ -1,0 +1,7 @@
+version: '3'
+
+services: 
+    backend:
+        image: bungaepyo/backend:hack
+        ports:
+            - "5000:5000"
